@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { waitForSuperApp, onSuperAppReady } from 'superapp-jsapi-sdk';
+import { onSuperAppReady } from 'superapp-jsapi-sdk';
 import type { UserInfo, SuperAppSDK } from 'superapp-jsapi-sdk';
 
 export default function App() {
