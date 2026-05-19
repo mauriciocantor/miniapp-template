@@ -1,0 +1,53 @@
+name: Deploy Mini-App
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - name: Corregir index.html
+        run: |
+          cat > dist/index.html << 'EOF'
+          <!doctype html>
+          <html lang="es">
+            <head>
+              <meta charset="UTF-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>Mi Mini-App</title>
+            </head>
+            <body>
+              <div id="root"></div>
+              <script src="./bundle.js"></script>
+            </body>
+          </html>
+          EOF
+      - name: Instalar Wrangler
+        run: npm install -g wrangler
+      - name: Subir a Cloudflare R2
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          APP_ID="${{ github.event.repository.name }}"
+          wrangler r2 object put superapp-bundles/$APP_ID/index.html \
+            --file dist/index.html --content-type "text/html" --remote
+          wrangler r2 object put superapp-bundles/$APP_ID/bundle.js \
+            --file dist/bundle.js --content-type "application/javascript" --remote
+      - name: Notificar al registry
+        run: |
+          VERSION=$(echo "${{ github.sha }}" | cut -c1-7)
+          APP_ID="${{ github.event.repository.name }}"
+          curl -X PUT ${{ secrets.API_URL }}/registry/$APP_ID \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_TOKEN }}" \
+            -d "{\"bundle_url\": \"${{ secrets.CDN_URL }}/$APP_ID/index.html\", \"version\": \"$VERSION\"}"
