@@ -6,7 +6,7 @@ Template oficial para desarrollar mini-apps en la plataforma SuperApp.
 
 ```bash
 # Clonar el template
-git clone https://github.com/TUUSUARIO/miniapp-template
+git clone https://github.com/mauriciocantor/miniapp-template
 cd miniapp-template
 npm install
 
